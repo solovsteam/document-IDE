@@ -30,6 +30,7 @@ export type EventType =
   | 'TaskSpawned'
   | 'TaskFinished'
   | 'BudgetUpdated'
+  | 'OrchStateChanged'
   | 'SessionReset'
 
 export type Band = 'high' | 'medium' | 'low' | 'very-low' | 'none'
@@ -164,6 +165,10 @@ export interface TaskPayload {
 export interface BudgetUpdatedPayload {
   used: number
   total: number
+}
+
+export interface OrchStateChangedPayload {
+  state: OrchState
 }
 
 export function blockNoOf(orderIdx: number): string {

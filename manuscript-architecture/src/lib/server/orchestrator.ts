@@ -219,8 +219,7 @@ async function pickNextWork(): Promise<boolean> {
   }
 
   // 3. Nothing left — the loop goes idle.
-  pause()
-  runtime.state = 'idle'
+  markIdle()
   await postSystemMessage(
     'All placeholder blocks are drafted. The loop is idle — approve a block to freeze it, or pin a chat message to reopen one.',
   )
@@ -280,12 +279,17 @@ async function tick(): Promise<void> {
   }
 }
 
+function publishOrchState(): void {
+  void appendEvent('OrchStateChanged', 'system', { state: runtime.state })
+}
+
 export function start(): void {
   if (runtime.state === 'running' || runtime.timer) return
   runtime.state = 'running'
   runtime.timer = setInterval(() => {
     void tick()
   }, 700)
+  publishOrchState()
   void tick()
 }
 
@@ -294,12 +298,21 @@ export function pause(): void {
     clearInterval(runtime.timer)
     runtime.timer = null
   }
-  if (runtime.state === 'running') runtime.state = 'paused'
+  if (runtime.state === 'running') {
+    runtime.state = 'paused'
+    publishOrchState()
+  }
 }
 
 export function markIdle(): void {
-  pause()
-  runtime.state = 'idle'
+  if (runtime.timer) {
+    clearInterval(runtime.timer)
+    runtime.timer = null
+  }
+  if (runtime.state !== 'idle') {
+    runtime.state = 'idle'
+    publishOrchState()
+  }
 }
 
 export function queueRevision(blockId: string, crId: string | null): void {
@@ -307,7 +320,10 @@ export function queueRevision(blockId: string, crId: string | null): void {
 }
 
 export function resetRuntime(): void {
-  pause()
+  if (runtime.timer) {
+    clearInterval(runtime.timer)
+    runtime.timer = null
+  }
   runtime.state = 'idle'
   runtime.budgetUsed = 0
   runtime.budgetTotal = 10000

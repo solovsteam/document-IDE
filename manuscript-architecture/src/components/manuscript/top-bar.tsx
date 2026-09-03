@@ -14,11 +14,18 @@ const STATE_META: Record<OrchState, { label: string; dot: string; cls: string }>
 
 async function sessionAction(action: 'start' | 'pause' | 'reset') {
   try {
-    await fetch('/api/session', {
+    const res = await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action }),
     })
+    const data = (await res.json().catch(() => ({}))) as {
+      state?: 'idle' | 'running' | 'paused'
+      budget?: { used: number; total: number }
+    }
+    if (data.state) {
+      useManuscript.getState().setOrchState(data.state, data.budget)
+    }
     if (action === 'reset') {
       // snapshot event arrives via SSE; hydrate immediately as a fallback
       await useManuscript.getState().hydrate()

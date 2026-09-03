@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# next / build
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# local databases and logs
+*.db
+*.db-journal
+dev.log
+server.log
+*.log
+
+# next-generated agent rule dumps
+AGENTS.md
+CLAUDE.md
+
+# env and OS
+.env
+.env*.local
+.DS_Store

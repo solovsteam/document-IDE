@@ -15,6 +15,8 @@ import type {
   FoldState,
   MessagePostedPayload,
   MessageView,
+  OrchState,
+  OrchStateChangedPayload,
   StatusChangedPayload,
   TaskPayload,
 } from './types'
@@ -47,6 +49,7 @@ interface ManuscriptState {
   hydrate: () => Promise<void>
   applyEvent: (e: EventView) => void
   setConnection: (c: ManuscriptState['connection']) => void
+  setOrchState: (state: OrchState, budget?: { used: number; total: number }) => void
   selectBlock: (blockId: string | null) => void
   setTab: (tab: PanelTab) => void
 }
@@ -120,6 +123,12 @@ export const useManuscript = create<ManuscriptState>()(
   },
 
   setConnection: (connection) => set({ connection }),
+
+  setOrchState: (state, budget) =>
+    set((draft) => {
+      draft.orchState = state
+      if (budget) draft.budget = budget
+    }),
 
   selectBlock: (blockId) =>
     set({ selectedBlockId: blockId, activeTab: blockId ? 'inspector' : get().activeTab }),
@@ -226,6 +235,11 @@ export const useManuscript = create<ManuscriptState>()(
         case 'BudgetUpdated': {
           const p = e.payload as unknown as BudgetUpdatedPayload
           draft.budget = { used: p.used, total: p.total }
+          break
+        }
+        case 'OrchStateChanged': {
+          const p = e.payload as unknown as OrchStateChangedPayload
+          if (p?.state) draft.orchState = p.state
           break
         }
         default:
