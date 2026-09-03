@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // Literal URL on purpose: resolved relative to THIS file, so the package
+  // works anywhere with zero configuration. To use Postgres instead, change
+  // provider and set url = env("DATABASE_URL") with a .env file.
+  url      = "file:./custom.db"
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  blocks    Block[]
+}
+
+model Block {
+  id         String    @id @default(cuid())
+  documentId String
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  orderIdx   Int
+  type       String // heading | paragraph
+  content    String    @default("")
+  status     String    @default("placeholder") // placeholder | drafting | draft | in_review | revised | frozen
+  updatedAt  DateTime  @updatedAt
+  meta       BlockMeta?
+  sources    BlockSource[]
+  changeRequests ChangeRequest[]
+  messages   Message[]
+
+  @@unique([documentId, orderIdx])
+}
+
+model BlockMeta {
+  id            String  @id @default(cuid())
+  blockId       String  @unique
+  block         Block   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  confidence    Float?
+  s1            Float?
+  s2            Float?
+  s3            Float?
+  rationale     String?
+  alternatives  String? // JSON: [{text, why}]
+  openQuestions String? // JSON: [string]
+}
+
+model Source {
+  id          String        @id @default(cuid())
+  title       String
+  snippet     String
+  uri         String        @unique
+  blocks      BlockSource[]
+}
+
+model BlockSource {
+  id        String @id @default(cuid())
+  blockId   String
+  block     Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  sourceId  String
+  source    Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  claimSpan String
+
+  @@unique([blockId, sourceId])
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  type      String // BlockPatched | StatusChanged | ConfidenceUpdated | MessagePosted | CRFiled | CRResolved | TaskSpawned | TaskFinished | BudgetUpdated | SessionReset
+  actor     String   @default("system") // human | drafter | critic | planner | gatekeeper | system
+  payload   String   @default("{}") // JSON
+
+  @@index([id])
+}
+
+model ChangeRequest {
+  id          String   @id @default(cuid())
+  blockId     String
+  block       Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  origin      String   @default("human") // human | critic
+  instruction String
+  status      String   @default("open") // open | approved | applied | discarded
+  createdAt   DateTime @default(now())
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  role          String // human | agent | system
+  body          String
+  pinnedBlockId String?
+  block         Block?   @relation(fields: [pinnedBlockId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+}
