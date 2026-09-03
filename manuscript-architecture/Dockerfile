@@ -4,7 +4,7 @@ WORKDIR /app
 
 # --- deps ---
 FROM base AS deps
-COPY package.json bun.lock ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm install && npx prisma generate
 

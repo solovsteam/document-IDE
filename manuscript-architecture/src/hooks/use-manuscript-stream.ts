@@ -19,7 +19,7 @@ export function useManuscriptStream(): void {
       const store = useManuscript.getState()
       store.setConnection(attempt === 0 ? 'connecting' : 'reconnecting')
 
-      es = new EventSource('/api/events')
+      es = new EventSource(`/api/events?since=${store.lastEventId}`)
 
       es.onopen = () => {
         attempt = 0

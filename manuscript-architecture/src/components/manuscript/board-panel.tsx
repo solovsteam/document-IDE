@@ -18,11 +18,19 @@ const TASK_KIND_LABEL: Record<'draft' | 'critic' | 'revise', string> = {
 }
 
 async function control(action: 'start' | 'pause') {
-  await fetch('/api/session', {
+  const res = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action }),
   }).catch(() => undefined)
+  if (!res) return
+  const data = (await res.json().catch(() => ({}))) as {
+    state?: 'idle' | 'running' | 'paused'
+    budget?: { used: number; total: number }
+  }
+  if (data.state) {
+    useManuscript.getState().setOrchState(data.state, data.budget)
+  }
 }
 
 function CRCard({ cr }: { cr: CRView }) {
