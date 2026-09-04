@@ -1,0 +1,16 @@
+{
+  "name": "The Manuscript Architecture",
+  "install": "cd manuscript-architecture && npm ci && npx prisma generate && npm run db:push",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "cd manuscript-architecture && npm run dev"
+    }
+  ],
+  "ports": [
+    {
+      "name": "dev server",
+      "port": 3000
+    }
+  ]
+}
